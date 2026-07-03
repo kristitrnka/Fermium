@@ -1,14 +1,14 @@
 [
   {
     "modid": "celeritas",
-    "name": "Celeritas",
-    "description": "An open-source client performance mod for Minecraft",
+    "name": "Fermium",
+    "description": "An open-source client performance and shader loader mod for Minecraft",
     "version": "${version}",
     "mcversion": "1.12.2",
     "url": "",
     "updateUrl": "",
-    "authorList": ["embeddedt"],
-    "credits": "The Sodium project",
+    "authorList": ["Kristihack"],
+    "credits": "The Sodium project, Iris Shaders, Celeritas",
     "logoFile": "icon.png",
     "screenshots": [],
     "dependencies": []

@@ -1,0 +1,6 @@
+Manifest-Version: 1.0
+FMLAT: celeritas_at.cfg
+FMLCorePlugin: org.taumc.celeritas.core.CeleritasLoadingPlugin
+FMLCorePluginContainsFMLMod: true
+ForceLoadAsMod: true
+

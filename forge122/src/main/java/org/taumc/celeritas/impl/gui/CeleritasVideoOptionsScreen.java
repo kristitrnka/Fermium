@@ -1,6 +1,7 @@
 package org.taumc.celeritas.impl.gui;
 
 import net.minecraft.client.Minecraft;
+import org.taumc.fermium.shaders.gui.FermiumShaderScreen;
 import net.minecraft.client.gui.GuiScreen;
 import org.taumc.celeritas.api.options.OptionIdentifier;
 import org.taumc.celeritas.api.options.structure.OptionFlag;
@@ -32,14 +33,12 @@ public class CeleritasVideoOptionsScreen extends GuiScreen {
         ), new VintageDrawContext()) {
             @Override
             protected void createExtraTabs(Map<String, List<Tab<?>>> tabs) {
-                if(ShaderModBridge.isShaderModPresent()) {
+                if(true) {
                     tabs.computeIfAbsent(CeleritasVintage.MODID, $ -> new ArrayList<>()).add(Tab.createBuilder()
                             .setTitle(TextComponent.translatable("options.iris.shaderPackSelection"))
                             .setId(OptionIdentifier.create(CeleritasVintage.MODID, "shader_packs"))
                             .setOnSelectFunction(() -> {
-                                if(ShaderModBridge.openShaderScreen(this) instanceof GuiScreen screen) {
-                                    Minecraft.getMinecraft().displayGuiScreen(screen);
-                                }
+                                Minecraft.getMinecraft().displayGuiScreen(new FermiumShaderScreen(CeleritasVideoOptionsScreen.this));
                                 return false;
                             })
                             .build());

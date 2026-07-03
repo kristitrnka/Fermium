@@ -116,7 +116,11 @@ public abstract class DefaultChunkRenderer extends ShaderChunkRenderer {
 
                 setModelMatrixUniforms(shader, region, camera);
                 shader.setSectionAges(timestamp, region.getSectionLoadTimes());
-                this.emitter.executeBatch(commandList, tessellation, primitiveType);
+
+                try {
+                    this.emitter.executeBatch(commandList, tessellation, primitiveType);
+                } finally {
+                }
             }
 
             this.currentVertexFormat = null;
@@ -240,6 +244,12 @@ public abstract class DefaultChunkRenderer extends ShaderChunkRenderer {
 
 
         return planes;
+    }
+
+    private static float[] fermiumMatrix(org.joml.Matrix4fc matrix) {
+        float[] out = new float[16];
+        matrix.get(out);
+        return out;
     }
 
     private static void setModelMatrixUniforms(ChunkShaderInterface shader, RenderRegion region, CameraTransform camera) {

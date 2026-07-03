@@ -4,8 +4,38 @@
   <component name="GradleSettings">
     <option name="linkedExternalProjectsSettings">
       <GradleProjectSettings>
+        <compositeConfiguration>
+          <compositeBuild compositeDefinitionSource="SCRIPT">
+            <builds>
+              <build path="$PROJECT_DIR$/buildSrc" name="buildSrc">
+                <projects>
+                  <project path="$PROJECT_DIR$/buildSrc" />
+                </projects>
+              </build>
+              <build path="$PROJECT_DIR$/plugins/celeritas-mdg-plugin" name="celeritas-mdg-plugin">
+                <projects>
+                  <project path="$PROJECT_DIR$/plugins/celeritas-mdg-plugin" />
+                </projects>
+              </build>
+              <build path="$PROJECT_DIR$/plugins/celeritas-unimined-plugin" name="celeritas-unimined-plugin">
+                <projects>
+                  <project path="$PROJECT_DIR$/plugins/celeritas-unimined-plugin" />
+                </projects>
+              </build>
+            </builds>
+          </compositeBuild>
+        </compositeConfiguration>
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="gradleJvm" value="25" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/buildSrc" />
+            <option value="$PROJECT_DIR$/common" />
+            <option value="$PROJECT_DIR$/plugins/celeritas-mdg-plugin" />
+            <option value="$PROJECT_DIR$/plugins/celeritas-unimined-plugin" />
+          </set>
+        </option>
       </GradleProjectSettings>
     </option>
   </component>

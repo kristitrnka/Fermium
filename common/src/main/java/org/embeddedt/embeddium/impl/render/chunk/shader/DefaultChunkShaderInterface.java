@@ -1,5 +1,6 @@
 package org.embeddedt.embeddium.impl.render.chunk.shader;
 
+
 import org.embeddedt.embeddium.impl.gl.shader.ShaderBindingContext;
 import org.embeddedt.embeddium.impl.gl.shader.uniform.GlUniformFloat3v;
 import org.embeddedt.embeddium.impl.gl.shader.uniform.GlUniformFloatArray;

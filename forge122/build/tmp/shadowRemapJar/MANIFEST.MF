@@ -1,0 +1,7 @@
+Manifest-Version: 1.0
+Class-Path: common-2.4.0-dev-downgraded-shaded.jar joml-1.10.5.jar
+FMLAT: celeritas_at.cfg
+FMLCorePlugin: org.taumc.celeritas.core.CeleritasLoadingPlugin
+FMLCorePluginContainsFMLMod: true
+ForceLoadAsMod: true
+

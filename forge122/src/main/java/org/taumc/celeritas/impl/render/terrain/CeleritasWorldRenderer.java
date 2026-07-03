@@ -9,6 +9,9 @@ import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.entity.Entity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.BlockRenderLayer;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL20;
+import org.taumc.fermium.shaders.iris.pipeline.FermiumShaderPipeline;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraftforge.client.MinecraftForgeClient;
 import org.embeddedt.embeddium.impl.gl.device.CommandList;
@@ -25,7 +28,9 @@ import java.util.*;
 /**
  * Provides an extension to vanilla's {@link net.minecraft.client.renderer.RenderGlobal}.
  */
-public class CeleritasWorldRenderer extends SimpleWorldRenderer<WorldClient, VintageRenderSectionManager, BlockRenderLayer, TileEntity, CeleritasWorldRenderer.TileEntityRenderContext>  {
+public class CeleritasWorldRenderer
+ extends SimpleWorldRenderer<WorldClient, VintageRenderSectionManager, BlockRenderLayer, TileEntity, CeleritasWorldRenderer.TileEntityRenderContext>  {
+    private static boolean fermiumAfterDrawLogged;
     @Desugar
     public record TileEntityRenderContext(Map<Integer, DestroyBlockProgress> damagedBlocks, float partialTicks) {}
 
@@ -145,10 +150,6 @@ public class CeleritasWorldRenderer extends SimpleWorldRenderer<WorldClient, Vin
     }
 
     private ChunkVertexType chooseVertexType() {
-        if (!CeleritasVintage.options().performance.useCompactVertexFormat) {
-            return ChunkMeshFormats.VANILLA_LIKE;
-        }
-
-        return ChunkMeshFormats.COMPACT;
+        return org.embeddedt.embeddium.impl.render.chunk.vertex.format.ChunkMeshFormats.VANILLA_LIKE;
     }
 }
