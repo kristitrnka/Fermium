@@ -5,6 +5,11 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.BitStorage;
 import net.minecraft.world.level.chunk.GlobalPalette;
 import net.minecraft.world.level.chunk.Palette;
+//? if >=1.17 <1.21.11 {
+import static net.minecraft.world.level.chunk.PalettedContainer.Strategy;
+//?} else if >=1.21.11 {
+/*import net.minecraft.world.level.chunk.Strategy;
+*///?}
 import org.embeddedt.embeddium.impl.world.PaletteStorageExtended;
 import org.embeddedt.embeddium.impl.world.ReadableContainerExtended;
 //? if <1.18
@@ -26,16 +31,23 @@ public abstract class PalettedContainerMixin<T> implements ReadableContainerExte
 
     @Shadow
     @Final
-    private PalettedContainer.Strategy strategy;
+    private Strategy strategy;
 
     @Shadow
     public abstract PalettedContainer<T> copy();
+
+    private static int strategySize(Strategy strategy) {
+        //? if <1.21.11 {
+        return strategy.size();
+        //?} else
+        /*return strategy.entryCount();*/
+    }
 
     @Override
     public void sodium$unpack(T[] values) {
         var indexer = Objects.requireNonNull(this.strategy);
 
-        if (values.length != indexer.size()) {
+        if (values.length != strategySize(indexer)) {
             throw new IllegalArgumentException("Array is wrong size");
         }
 
@@ -49,7 +61,7 @@ public abstract class PalettedContainerMixin<T> implements ReadableContainerExte
     public void sodium$unpack(T[] values, int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
         var indexer = Objects.requireNonNull(this.strategy);
 
-        if (values.length != indexer.size()) {
+        if (values.length != strategySize(indexer)) {
             throw new IllegalArgumentException("Array is wrong size");
         }
 

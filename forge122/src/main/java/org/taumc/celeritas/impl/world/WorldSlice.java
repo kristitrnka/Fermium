@@ -26,6 +26,7 @@ import org.embeddedt.embeddium.impl.util.PositionUtil;
 import org.embeddedt.embeddium.impl.util.position.SectionPos;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3i;
+import org.taumc.celeritas.CeleritasVintage;
 import org.taumc.celeritas.impl.compat.fluidlogged.FluidloggedCompat;
 import org.taumc.celeritas.impl.render.terrain.CeleritasWorldRenderer;
 import org.taumc.celeritas.impl.world.biome.BiomeColorCache;
@@ -118,14 +119,7 @@ public class WorldSlice implements CeleritasBlockAccess {
 
     public static ChunkRenderContext prepare(World world, SectionPos origin, ClonedChunkSectionCache sectionCache) {
         Chunk chunk = world.getChunk(origin.x(), origin.z());
-        ExtendedBlockStorage[] sectionArray = chunk.getBlockStorageArray();
-        int sectionY = origin.y();
-
-        if (sectionY < 0 || sectionY >= sectionArray.length) {
-            return null;
-        }
-
-        ExtendedBlockStorage section = sectionArray[sectionY];
+        ExtendedBlockStorage section = chunk.getBlockStorageArray()[origin.y()];
 
         // If the chunk section is absent or empty, simply terminate now. There will never be anything in this chunk
         // section to render, so we need to signal that a chunk render task shouldn't created. This saves a considerable
@@ -179,7 +173,7 @@ public class WorldSlice implements CeleritasBlockAccess {
         this.sections = new ClonedChunkSection[SECTION_TABLE_ARRAY_SIZE];
         this.blockStatesArrays = new IBlockState[SECTION_TABLE_ARRAY_SIZE][];
         this.biomeCaches = new Biome[SECTION_TABLE_ARRAY_SIZE][16 * 16];
-        this.biomeColorCache = new BiomeColorCache(this, 3);
+        this.biomeColorCache = new BiomeColorCache(this, CeleritasVintage.options().quality.legacyBiomeBlendRadius);
         if(!FluidloggedCompat.IS_LOADED) this.fluidStatesArrays = null;
         else this.fluidStatesArrays = new Object[SECTION_TABLE_ARRAY_SIZE][];
 

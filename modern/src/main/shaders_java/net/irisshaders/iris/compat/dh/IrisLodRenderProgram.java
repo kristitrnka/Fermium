@@ -1,14 +1,8 @@
 package net.irisshaders.iris.compat.dh;
 
-import java.nio.FloatBuffer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import static com.mitchej123.glsm.RenderSystemService.RENDER_SYSTEM;
-
 import com.google.common.base.Preconditions;
 import com.google.common.primitives.Ints;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.seibel.distanthorizons.api.DhApi;
 import com.seibel.distanthorizons.api.objects.math.DhApiVec3f;
 import net.irisshaders.iris.gl.IrisRenderSystem;
@@ -19,7 +13,7 @@ import net.irisshaders.iris.gl.program.ProgramSamplers;
 import net.irisshaders.iris.gl.program.ProgramUniforms;
 import net.irisshaders.iris.gl.state.FogMode;
 import net.irisshaders.iris.gl.texture.TextureType;
-import net.irisshaders.iris.pipeline.ModernIrisRenderingPipeline;
+import net.irisshaders.iris.pipeline.IrisRenderingPipeline;
 import net.irisshaders.iris.pipeline.foss_transform.TransformPatcherBridge;
 import net.irisshaders.iris.pipeline.transform.ShaderPrinter;
 import net.irisshaders.iris.samplers.IrisSamplers;
@@ -36,6 +30,11 @@ import org.joml.Matrix4fc;
 import org.lwjgl.opengl.GL32;
 import org.lwjgl.opengl.GL43C;
 import org.lwjgl.system.MemoryStack;
+
+import java.nio.FloatBuffer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class IrisLodRenderProgram {
 	// Uniforms
@@ -58,7 +57,7 @@ public class IrisLodRenderProgram {
 	private final BufferBlendOverride[] bufferBlendOverrides;
 
 	// This will bind  AbstractVertexAttribute
-	private IrisLodRenderProgram(String name, boolean isShadowPass, boolean translucent, BlendModeOverride override, BufferBlendOverride[] bufferBlendOverrides, String vertex, String tessControl, String tessEval, String geometry, String fragment, CustomUniforms customUniforms, ModernIrisRenderingPipeline pipeline) {
+	private IrisLodRenderProgram(String name, boolean isShadowPass, boolean translucent, BlendModeOverride override, BufferBlendOverride[] bufferBlendOverrides, String vertex, String tessControl, String tessEval, String geometry, String fragment, CustomUniforms customUniforms, IrisRenderingPipeline pipeline) {
 		id = GL43C.glCreateProgram();
 
 		GL32.glBindAttribLocation(this.id, 0, "vPosition");
@@ -135,7 +134,7 @@ public class IrisLodRenderProgram {
 		clipDistanceUniform = tryGetUniformLocation2("clipDistance");
 	}
 
-	public static IrisLodRenderProgram createProgram(String name, boolean isShadowPass, boolean translucent, ProgramSource source, CustomUniforms uniforms, ModernIrisRenderingPipeline pipeline) {
+	public static IrisLodRenderProgram createProgram(String name, boolean isShadowPass, boolean translucent, ProgramSource source, CustomUniforms uniforms, IrisRenderingPipeline pipeline) {
         Preconditions.checkArgument(source.isValid());
 		Map<ShaderType, String> transformed = TransformPatcherBridge.patchDHTerrain(
 			name,
@@ -177,7 +176,7 @@ public class IrisLodRenderProgram {
 			matrix.get(buffer);
 			buffer.rewind();
 
-			RENDER_SYSTEM.glUniformMatrix4(index, false, buffer);
+			RenderSystem.glUniformMatrix4(index, false, buffer);
 		}
 	}
 
@@ -189,7 +188,7 @@ public class IrisLodRenderProgram {
 			matrix.get(buffer);
 			buffer.rewind();
 
-			RENDER_SYSTEM.glUniformMatrix3(index, false, buffer);
+			RenderSystem.glUniformMatrix3(index, false, buffer);
 		}
 	}
 
@@ -218,7 +217,7 @@ public class IrisLodRenderProgram {
 		GL43C.glUseProgram(id);
 
 		Minecraft.getInstance().gameRenderer.lightTexture().turnOnLightLayer();
-		IrisRenderSystem.bindTextureToUnit(TextureType.TEXTURE_2D.getGlType(), IrisSamplers.LIGHTMAP_TEXTURE_UNIT, RENDER_SYSTEM.getShaderTexture(2));
+		IrisRenderSystem.bindTextureToUnit(TextureType.TEXTURE_2D.getGlType(), IrisSamplers.LIGHTMAP_TEXTURE_UNIT, RenderSystem.getShaderTexture(2));
 		setUniform(modelViewUniform, modelView);
 		setUniform(modelViewInverseUniform, modelView.invert(new Matrix4f()));
 		setUniform(projectionUniform, projection);

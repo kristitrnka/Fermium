@@ -3,14 +3,16 @@ package org.taumc.celeritas.impl.render.terrain;
 import lombok.Getter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.WorldClient;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.chunk.Chunk;
 import org.embeddedt.embeddium.impl.gl.device.CommandList;
 import org.embeddedt.embeddium.impl.gl.device.RenderDevice;
-import org.embeddedt.embeddium.impl.render.ShaderModBridge;
 import org.embeddedt.embeddium.impl.render.chunk.*;
 import org.embeddedt.embeddium.impl.render.chunk.compile.ChunkBuildOutput;
 import org.embeddedt.embeddium.impl.render.chunk.compile.tasks.ChunkBuilderTask;
+import org.embeddedt.embeddium.impl.render.chunk.data.BuiltRenderSectionData;
+import org.embeddedt.embeddium.impl.render.chunk.data.MinecraftBuiltRenderSectionData;
 import org.embeddedt.embeddium.impl.render.chunk.lists.SectionTicker;
 import org.embeddedt.embeddium.impl.render.chunk.occlusion.AsyncOcclusionMode;
 import org.embeddedt.embeddium.impl.render.chunk.shader.ChunkShaderInterface;
@@ -27,6 +29,8 @@ import org.taumc.celeritas.impl.render.terrain.sprite.SpriteUtil;
 import org.taumc.celeritas.impl.world.WorldSlice;
 import org.taumc.celeritas.impl.world.cloned.ChunkRenderContext;
 import org.taumc.celeritas.impl.world.cloned.ClonedChunkSectionCache;
+
+import java.util.List;
 
 public class VintageRenderSectionManager extends RenderSectionManager {
     private final WorldClient world;
@@ -55,15 +59,11 @@ public class VintageRenderSectionManager extends RenderSectionManager {
 
     @Override
     protected boolean useFogOcclusion() {
-        return CeleritasVintage.options().performance.useFogOcclusion && !ShaderModBridge.areShadersEnabled();
+        return CeleritasVintage.options().performance.useFogOcclusion;
     }
 
     @Override
     protected boolean shouldUseOcclusionCulling(Viewport positionedViewport, boolean spectator) {
-        if (ShaderModBridge.areShadersEnabled() && this.world.provider != null && !this.world.provider.hasSkyLight()) {
-            return false;
-        }
-
         final boolean useOcclusionCulling;
         var camBlockPos = positionedViewport.getBlockCoord();
         BlockPos origin = new BlockPos(camBlockPos.x(), camBlockPos.y(), camBlockPos.z());
@@ -117,6 +117,29 @@ public class VintageRenderSectionManager extends RenderSectionManager {
     public void updateChunks(boolean updateImmediately) {
         this.sectionCache.cleanup();
         super.updateChunks(updateImmediately);
+    }
+
+    /**
+     * This ridiculous workaround is needed because some mods rely on side effects of calling getRenderBoundingBox
+     * to initialize tile entity state. It can be removed if we start using getRenderBoundingBox for TE rendering
+     * again.
+     */
+    @SuppressWarnings("unchecked")
+    private static void retrieveBBForList(List<?> blockEntities) {
+        if (!blockEntities.isEmpty()) {
+            for (var be : (List<TileEntity>)blockEntities) {
+                be.getRenderBoundingBox();
+            }
+        }
+    }
+
+    @Override
+    protected boolean updateSectionInfo(RenderSection render, @Nullable BuiltRenderSectionData info) {
+        if (info instanceof MinecraftBuiltRenderSectionData<?,?> mcData) {
+            retrieveBBForList(mcData.culledBlockEntities);
+            retrieveBBForList(mcData.globalBlockEntities);
+        }
+        return super.updateSectionInfo(render, info);
     }
 
     @Override

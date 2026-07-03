@@ -1,16 +1,10 @@
 package org.embeddedt.embeddium.impl.modern.render.chunk;
 
-import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
-import it.unimi.dsi.fastutil.objects.ReferenceSet;
-import it.unimi.dsi.fastutil.objects.ReferenceSets;
 import lombok.Getter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 import org.embeddedt.embeddium.api.ChunkMeshEvent;
@@ -23,9 +17,6 @@ import org.embeddedt.embeddium.impl.render.ShaderModBridge;
 import org.embeddedt.embeddium.impl.render.chunk.RenderPassConfiguration;
 import org.embeddedt.embeddium.impl.render.chunk.RenderSection;
 import org.embeddedt.embeddium.impl.render.chunk.RenderSectionManager;
-import org.embeddedt.embeddium.impl.render.chunk.data.BuiltRenderSectionData;
-import org.embeddedt.embeddium.impl.render.chunk.data.MinecraftBuiltRenderSectionData;
-import org.embeddedt.embeddium.impl.render.chunk.lists.ChunkRenderList;
 import org.embeddedt.embeddium.impl.render.chunk.lists.SectionTicker;
 import org.embeddedt.embeddium.impl.render.chunk.occlusion.AsyncOcclusionMode;
 import org.embeddedt.embeddium.impl.render.chunk.sprite.GenericSectionSpriteTicker;
@@ -62,10 +53,11 @@ public class ModernRenderSectionManager extends RenderSectionManager {
     }
 
     public static ModernRenderSectionManager create(ChunkVertexType vertexType, ClientLevel world, int renderDistance, CommandList commandList) {
-        //? if <1.21.5 {
+        //? if <1.21.11 {
         var renderPassConfiguration = org.embeddedt.embeddium.impl.modern.render.chunk.config.ModernRenderPassConfigurationBuilder.build(vertexType);
-        //?} else
-        /*var renderPassConfiguration = new org.embeddedt.embeddium.impl.modern.render.chunk.config.PostmodernRenderPassConfigurationBuilder(vertexType).build();*/
+        //?} else {
+        /*var renderPassConfiguration = org.embeddedt.embeddium.impl.render.terrain.PostmodernRenderPassConfigurationBuilder.createRenderPassConfiguration(vertexType);
+        *///?}
         return new ModernRenderSectionManager(renderPassConfiguration, world, renderDistance, commandList);
     }
 
@@ -94,8 +86,10 @@ public class ModernRenderSectionManager extends RenderSectionManager {
         var camBlockPos = viewport.getBlockCoord();
         BlockPos origin = new BlockPos(camBlockPos.x(), camBlockPos.y(), camBlockPos.z());
 
-        if (spectator && this.world.getBlockState(origin)
-                .isSolidRender(/*? if <1.21.2 {*/this.world, origin/*?}*/))
+        if (spectator && this.world.getBlockState(origin).isSolidRender(
+                //? if <1.21.11
+                this.world, origin
+        ))
         {
             useOcclusionCulling = false;
         } else {
@@ -122,9 +116,9 @@ public class ModernRenderSectionManager extends RenderSectionManager {
     }
 
     @Override
-    protected void scheduleSectionForRebuild(int x, int y, int z, boolean important) {
-        this.sectionCache.invalidate(x, y, z);
-        super.scheduleSectionForRebuild(x, y, z, important);
+    protected void invalidateCachedSectionData(RenderSection section) {
+        super.invalidateCachedSectionData(section);
+        this.sectionCache.invalidate(section.getChunkX(), section.getChunkY(), section.getChunkZ());
     }
 
     @Override
@@ -146,5 +140,11 @@ public class ModernRenderSectionManager extends RenderSectionManager {
     @Override
     protected boolean shouldRespectUpdateTaskQueueSizeLimit() {
         return !FlawlessFrames.isActive();
+    }
+
+    public void markShadowGraphDirty() {
+        if (this.shadowRenderListManager != null) {
+            this.shadowRenderListManager.setNeedsUpdate(true);
+        }
     }
 }

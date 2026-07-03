@@ -4,7 +4,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.irisshaders.iris.layer.BlockEntityRenderStateShard;
 import net.irisshaders.iris.layer.OuterWrappedRenderType;
-import net.irisshaders.iris.shaderpack.materialmap.ModernWorldRenderingSettings;
 import net.irisshaders.iris.shaderpack.materialmap.WorldRenderingSettings;
 import net.irisshaders.iris.uniforms.CapturedRenderingState;
 import net.irisshaders.iris.vertices.ImmediateState;
@@ -42,7 +41,7 @@ public class MixinBlockEntityRenderDispatcher {
 	private MultiBufferSource iris$wrapBufferSource(MultiBufferSource bufferSource, BlockEntity blockEntity) {
 		BlockState state = blockEntity.getBlockState();
 
-		Object2IntMap<BlockState> blockStateIds = ModernWorldRenderingSettings.INSTANCE.getBlockStateIds();
+		Object2IntMap<BlockState> blockStateIds = WorldRenderingSettings.INSTANCE.getBlockStateIds();
 
 		if (blockStateIds == null || !ImmediateState.isRenderingLevel) {
 			return bufferSource;

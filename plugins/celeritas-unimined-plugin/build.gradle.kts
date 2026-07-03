@@ -4,14 +4,32 @@ plugins {
 }
 
 dependencies {
-    implementation("com.gradleup.shadow:com.gradleup.shadow.gradle.plugin:9.4.2")
-    implementation("xyz.wagyourtail.unimined:xyz.wagyourtail.unimined.gradle.plugin:1.3.15-SNAPSHOT")
+    implementation("com.gradleup.shadow:shadow-gradle-plugin:9.3.0")
+    implementation("xyz.wagyourtail.unimined:xyz.wagyourtail.unimined.gradle.plugin:1.3.16-SNAPSHOT")
 }
 
 repositories {
     mavenCentral()
-    maven("https://maven.wagyourtail.xyz/releases")
-    maven("https://maven.wagyourtail.xyz/snapshots")
+    exclusiveContent {
+        forRepository { maven("https://maven.neoforged.net/releases") }
+        filter {
+            includeGroup("net.neoforged")
+            includeGroup("net.minecraftforge")
+        }
+    }
+    exclusiveContent {
+        forRepository { maven("https://maven.fabricmc.net/") }
+        filter {
+            includeGroup("net.fabricmc")
+        }
+    }
+    exclusiveContent {
+        forRepository { maven("https://maven.wagyourtail.xyz/snapshots") }
+        forRepository { maven("https://maven.wagyourtail.xyz/releases") }
+        filter {
+            includeGroupAndSubgroups("xyz.wagyourtail")
+        }
+    }
 }
 
 gradlePlugin {

@@ -1,13 +1,11 @@
 package net.irisshaders.iris.mixin.texture;
 
 import com.mojang.blaze3d.platform.NativeImage;
-import net.irisshaders.iris.Iris;
 import net.irisshaders.iris.texture.SpriteContentsExtension;
 import net.irisshaders.iris.texture.mipmap.CustomMipmapGenerator;
 import net.minecraft.client.renderer.texture.MipmapGenerator;
 import net.minecraft.client.renderer.texture.SpriteContents;
 import net.minecraft.client.renderer.texture.SpriteTicker;
-import org.embeddedt.embeddium.compat.mc.MCNativeImage;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -15,8 +13,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-
-import static net.irisshaders.iris.IrisLogging.IRIS_LOGGER;
+import org.taumc.celeritas.shaders.CeleritasShaders;
 
 @Mixin(SpriteContents.class)
 public class MixinSpriteContents implements SpriteContentsExtension {
@@ -30,9 +27,9 @@ public class MixinSpriteContents implements SpriteContentsExtension {
 			CustomMipmapGenerator generator = provider.getMipmapGenerator();
 			if (generator != null) {
 				try {
-                    return (NativeImage[])(Object)generator.generateMipLevels((MCNativeImage[])(Object)nativeImages, mipLevel);
+					return generator.generateMipLevels(nativeImages, mipLevel);
 				} catch (Exception e) {
-					IRIS_LOGGER.error("ERROR MIPMAPPING", e);
+					CeleritasShaders.logger().error("ERROR MIPMAPPING", e);
 				}
 			}
 		}

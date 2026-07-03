@@ -1,3 +1,4 @@
+//? if shaders {
 package org.embeddedt.embeddium.impl.modern.render.chunk.compile.pipeline;
 
 import net.minecraft.client.renderer.RenderType;
@@ -36,3 +37,4 @@ public class SpecialBlockRenderer {
         }
     }
 }
+//?}

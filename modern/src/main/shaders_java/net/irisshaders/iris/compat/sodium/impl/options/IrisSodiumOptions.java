@@ -4,31 +4,29 @@ package net.irisshaders.iris.compat.sodium.impl.options;
 
 import com.google.common.collect.ImmutableList;
 import net.irisshaders.iris.Iris;
-import net.irisshaders.iris.IrisCommon;
 import net.irisshaders.iris.config.IrisConfig;
 import net.irisshaders.iris.gui.option.IrisVideoSettings;
 import net.irisshaders.iris.pathways.colorspace.ColorSpace;
 import net.minecraft.client.Options;
-import net.minecraft.network.chat.Component;
-import org.embeddedt.embeddium.api.OptionGUIConstructionEvent;
-import org.embeddedt.embeddium.api.OptionGroupConstructionEvent;
-import org.embeddedt.embeddium.api.options.control.ControlValueFormatter;
-import org.embeddedt.embeddium.api.options.control.CyclingControl;
-import org.embeddedt.embeddium.api.options.control.SliderControl;
-import org.embeddedt.embeddium.api.options.control.TickBoxControl;
-import org.embeddedt.embeddium.api.options.structure.*;
-import org.embeddedt.embeddium.impl.gui.SodiumGameOptionPages;
+import org.taumc.celeritas.api.OptionGUIConstructionEvent;
+import org.taumc.celeritas.api.OptionGroupConstructionEvent;
+import org.taumc.celeritas.api.options.control.ControlValueFormatter;
+import org.taumc.celeritas.api.options.control.CyclingControl;
+import org.taumc.celeritas.api.options.control.SliderControl;
+import org.taumc.celeritas.api.options.control.TickBoxControl;
+import org.embeddedt.embeddium.impl.gui.modern.SodiumGameOptionPages;
+import org.embeddedt.embeddium.impl.gui.framework.TextComponent;
+import org.taumc.celeritas.api.options.structure.*;
+import org.taumc.celeritas.shaders.CeleritasShaders;
 
 import java.io.IOException;
 import java.util.Set;
-
-import static net.irisshaders.iris.IrisLogging.IRIS_LOGGER;
 
 public class IrisSodiumOptions {
     private static final OptionStorage<IrisConfig> irisOpts = new OptionStorage<IrisConfig>() {
         @Override
         public IrisConfig getData() {
-            return IrisCommon.getIrisConfig();
+            return Iris.getIrisConfig();
         }
 
         @Override
@@ -40,7 +38,7 @@ public class IrisSodiumOptions {
                     Iris.reload();
                 }
             } catch (IOException e) {
-                IRIS_LOGGER.error("Error saving config", e);
+                CeleritasShaders.logger().error("Error saving config", e);
             }
         }
     };
@@ -54,18 +52,18 @@ public class IrisSodiumOptions {
             }
         });
         OptionGUIConstructionEvent.BUS.addListener(ev -> {
-            ev.addPage(new OptionPage(StandardOptions.Pages.SHADERS, Component.literal("Shaders"), ImmutableList.of(
+            ev.addPage(new OptionPage(StandardOptions.Pages.SHADERS, TextComponent.literal("Shaders"), ImmutableList.of(
                     OptionGroup.createBuilder()
                             .add(OptionImpl.createBuilder(boolean.class, irisOpts)
-                                    .setName(Component.literal("Enable Texture Material Fallback"))
-                                    .setTooltip(Component.literal("Uses textures to guess block.properties IDs if they are not set."))
+                                    .setName(TextComponent.literal("Enable Texture Material Fallback"))
+                                    .setTooltip(TextComponent.literal("Uses textures to guess block.properties IDs if they are not set."))
                                     .setControl(TickBoxControl::new)
                                     .setBinding(IrisConfig::setEnableTextureMaterialFallback, IrisConfig::isEnableTextureMaterialFallback)
                                     .setFlags(OptionFlag.REQUIRES_SHADER_PIPELINE_RELOAD)
                                     .build())
                             .add(OptionImpl.createBuilder(boolean.class, irisOpts)
-                                    .setName(Component.literal("Block Modded Core Shaders"))
-                                    .setTooltip(Component.literal("Prevents modded core shaders from being active with the Iris pipeline."))
+                                    .setName(TextComponent.literal("Block Modded Core Shaders"))
+                                    .setTooltip(TextComponent.literal("Prevents modded core shaders from being active with the Iris pipeline."))
                                     .setControl(TickBoxControl::new)
                                     .setBinding(IrisConfig::setBlockUnknownShaders, IrisConfig::isBlockUnknownShaders)
                                     .setFlags(OptionFlag.REQUIRES_SHADER_PIPELINE_RELOAD)
@@ -77,13 +75,13 @@ public class IrisSodiumOptions {
 
 	public static OptionImpl<IrisConfig, Integer> createMaxShadowDistanceSlider(OptionStorage<Options> vanillaOpts) {
 		return OptionImpl.createBuilder(int.class, irisOpts)
-			.setName(Component.translatable("options.iris.shadowDistance"))
-			.setTooltip(Component.translatable("options.iris.shadowDistance.sodium_tooltip"))
+			.setName(TextComponent.translatable("options.iris.shadowDistance"))
+			.setTooltip(TextComponent.translatable("options.iris.shadowDistance.sodium_tooltip"))
 			.setControl(option -> new SliderControl(option, 0, 32, 1, translateVariableOrDisabled("options.chunks", "Disabled")))
 			.setBinding((options, value) -> {
 					IrisVideoSettings.shadowDistance = value;
 					try {
-						IrisCommon.getIrisConfig().save();
+						Iris.getIrisConfig().save();
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
@@ -96,14 +94,14 @@ public class IrisSodiumOptions {
 
 	public static OptionImpl<Options, ColorSpace> createColorSpaceButton(OptionStorage<Options> vanillaOpts) {
 		OptionImpl<Options, ColorSpace> colorSpace = OptionImpl.createBuilder(ColorSpace.class, vanillaOpts)
-			.setName(Component.translatable("options.iris.colorSpace"))
-			.setTooltip(Component.translatable("options.iris.colorSpace.sodium_tooltip"))
+			.setName(TextComponent.translatable("options.iris.colorSpace"))
+			.setTooltip(TextComponent.translatable("options.iris.colorSpace.sodium_tooltip"))
 			.setControl(option -> new CyclingControl<>(option, ColorSpace.class,
-				new Component[]{Component.literal("sRGB"), Component.literal("DCI_P3"), Component.literal("Display P3"), Component.literal("REC2020"), Component.literal("Adobe RGB")}))
+				new TextComponent[]{TextComponent.literal("sRGB"), TextComponent.literal("DCI_P3"), TextComponent.literal("Display P3"), TextComponent.literal("REC2020"), TextComponent.literal("Adobe RGB")}))
 			.setBinding((options, value) -> {
 					IrisVideoSettings.colorSpace = value;
 					try {
-						IrisCommon.getIrisConfig().save();
+						Iris.getIrisConfig().save();
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
@@ -119,7 +117,7 @@ public class IrisSodiumOptions {
 
 	static ControlValueFormatter translateVariableOrDisabled(String key, String disabled) {
 		return (v) -> {
-			return v == 0 ? Component.literal(disabled) : (Component.translatable(key, v));
+			return v == 0 ? TextComponent.literal(disabled) : (TextComponent.translatable(key, v));
 		};
 	}
 }

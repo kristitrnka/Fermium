@@ -9,7 +9,7 @@ import org.embeddedt.embeddium.api.world.EmbeddiumBlockAndTintGetter;
 import org.embeddedt.embeddium.impl.asm.ProxyClassGenerator;
 import org.embeddedt.embeddium.impl.util.WorldUtil;
 import org.embeddedt.embeddium.impl.world.WorldSlice;
-//? if >=1.15
+//? if >=1.15 <1.21.11
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
@@ -19,6 +19,7 @@ import net.minecraftforge.client.model.data.ModelData;
 /*import net.minecraftforge.client.model.data.IModelData;*/
 //? if neoforge
 /*import net.neoforged.neoforge.client.model.data.ModelData;*/
+//? if <1.21.11
 import org.embeddedt.embeddium.impl.render.matrix_stack.CachingPoseStack;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
@@ -47,28 +48,27 @@ public class BlockRenderContext {
      */
     @Getter
     @Setter
-    //? if <1.21.5-alpha.25.7.a {
+    //? if <1.21.11 {
     private net.minecraft.client.resources.model.BakedModel model;
     //?} else
-    /*private net.minecraft.client.renderer.block.model.BlockModelPart model;*/
+    /*private net.minecraft.client.renderer.block.dispatch.BlockStateModelPart model;*/
 
     private long seed;
 
-    //? if forgelike {
+    //? if forgelike && <1.21.11 {
     @Setter
     @Accessors(fluent = false)
     //?}
-    //? if forgelike && >=1.19.1
+    //? if forgelike && >=1.19.1 && <1.21.11
     private ModelData modelData;
     //? if forgelike && <1.19.1
     /*private IModelData modelData;*/
 
+    //? if <26.1 {
     @Getter
     @Setter
-    //? if <1.21.5 {
     private RenderType renderLayer;
-    //?} else
-    /*private net.minecraft.client.renderer.chunk.ChunkSectionLayer renderLayer;*/
+    //?}
 
     private int lightValue = -1;
 
@@ -77,6 +77,13 @@ public class BlockRenderContext {
     private final net.minecraft.util.RandomSource random = new net.minecraft.world.level.levelgen.SingleThreadedRandomSource(42L);
     //?} else
     /*private final java.util.Random random = new org.embeddedt.embeddium.impl.util.rand.XoRoShiRoRandom(42L);*/
+
+    /**
+     * Increments each time the block being rendered changes; used to efficiently avoid re-retrieving data
+     * in lower-level constructs (e.g. vertex encoder).
+     */
+    @Getter
+    private int updateVersion;
 
     @Getter
     private GeometryCategory category = GeometryCategory.BLOCK;
@@ -98,6 +105,8 @@ public class BlockRenderContext {
         this.random.setSeed(seed);
 
         this.lightValue = -1;
+
+        this.updateVersion++;
     }
 
     /**
@@ -128,6 +137,7 @@ public class BlockRenderContext {
     public PoseStack stack() {
         if (this.stack == null) {
             this.stack = new PoseStack();
+            //? if <1.21.11
             ((CachingPoseStack)this.stack).embeddium$setCachingEnabled(true);
         }
         return this.stack;
@@ -148,7 +158,7 @@ public class BlockRenderContext {
         return this.seed;
     }
 
-    //? if forgelike && >=1.19 {
+    //? if forgelike && >=1.19 && <1.21.11 {
     /**
      * @return The additional data for model instance
      */

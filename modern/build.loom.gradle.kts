@@ -6,7 +6,7 @@ import org.embeddedt.embeddium.gradle.stonecutter.ModDependencyCollector
 import org.gradle.kotlin.dsl.register
 
 plugins {
-    id("fabric-loom") version "1.11.4"
+    id("net.fabricmc.fabric-loom-remap") version "1.15.3"
     id("celeritas.platform-conventions")
     id("celeritas.shader-conventions") apply false
 }
@@ -20,8 +20,9 @@ val minecraftVersion = ModLoader.getMinecraftVersion(project)!!
 val defaultArchiveBaseName = "celeritas-${modLoader.friendlyName}-mc${minecraftVersion.replace("^1\\.".toRegex(), "")}"
 
 repositories {
-    maven("https://maven.parchmentmc.org/") {
-        content {
+    exclusiveContent {
+        forRepository { maven("https://maven.parchmentmc.org/") }
+        filter {
             includeGroup("org.parchmentmc.data")
         }
     }
@@ -80,6 +81,17 @@ dependencies {
     ModDependencyCollector.obtainDeps(project) { cfg, dep ->
         dependencies.add(cfg, dep)
     }
+
+    testImplementation("net.fabricmc:fabric-loader-junit:${rootProject.property("fabricloader")}")
+}
+
+tasks.named<Test>("test") {
+    useJUnitPlatform()
+    val junitDir = project.layout.buildDirectory.file("fabric-junit").get().asFile
+    doFirst {
+        junitDir.mkdirs()
+    }
+    workingDir = junitDir
 }
 
 if (stonecutter.constants.getOrDefault("shaders", false)) {
@@ -90,7 +102,7 @@ tasks.named("validateAccessWidener") {
     enabled = false
 }
 
-tasks.named<RemapJarTask>("remapJar") {
+val remapJarTask = tasks.named<RemapJarTask>("remapJar") {
     archiveClassifier.set("thin")
 }
 
@@ -98,7 +110,7 @@ val shadowJar = tasks.register<ShadowJar>("shadowRemapJar") {
     archiveBaseName = defaultArchiveBaseName
     archiveClassifier = ""
     configurations = listOf(project.configurations.shadow.get())
-    from(tasks.named("remapJar"))
+    from(zipTree(remapJarTask.get().archiveFile))
     manifest.inheritFrom(tasks.named<Jar>("jar").get().manifest)
     mergeServiceFiles()
 

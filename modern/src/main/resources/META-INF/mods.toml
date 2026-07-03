@@ -16,7 +16,7 @@ description = "$mod_description"
 [[mods]]
 modId = "iris"
 version = "1.8.0+mc${minecraft}"
-displayName = "Pintonium Shaders"
+displayName = "Celeritas Shaders"
 description = '''
 Stub, to allow mods detecting Iris to function as expected.
 '''
@@ -33,6 +33,6 @@ side = "BOTH"
 modId = "minecraft"
 mandatory = true
 type="required"
-versionRange = "${minecraft}"
+versionRange = "*"
 ordering = "NONE"
 side = "BOTH"

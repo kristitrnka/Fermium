@@ -1,3 +1,4 @@
+//? if <26.1 {
 package org.embeddedt.embeddium.impl.render.fluid;
 
 //? if forge && >=1.19
@@ -8,13 +9,13 @@ import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 //? if forgelike {
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.material.FluidState;
 
+import net.minecraft.client.renderer.texture.TextureAtlas;
 
 public class EmbeddiumFluidSpriteCache {
     // Cache the sprites array to avoid reallocating it on every call
@@ -25,7 +26,10 @@ public class EmbeddiumFluidSpriteCache {
         TextureAtlasSprite sprite = spriteCache.get(identifier);
 
         if (sprite == null) {
+            //? if <1.21.11 {
             sprite = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS).apply(identifier);
+            //?} else
+            /*sprite = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(TextureAtlas.LOCATION_BLOCKS).getSprite(identifier);*/
             spriteCache.put(identifier, sprite);
         }
 

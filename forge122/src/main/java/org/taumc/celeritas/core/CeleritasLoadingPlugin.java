@@ -4,10 +4,11 @@ import net.minecraftforge.fml.relauncher.IFMLLoadingPlugin;
 import org.jetbrains.annotations.Nullable;
 import zone.rong.mixinbooter.IEarlyMixinLoader;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-@IFMLLoadingPlugin.Name("Pintonium")
+@IFMLLoadingPlugin.Name("Celeritas")
 @IFMLLoadingPlugin.MCVersion("1.12.2")
 public class CeleritasLoadingPlugin implements IFMLLoadingPlugin, IEarlyMixinLoader {
     @Override
@@ -37,6 +38,6 @@ public class CeleritasLoadingPlugin implements IFMLLoadingPlugin, IEarlyMixinLoa
 
     @Override
     public List<String> getMixinConfigs() {
-        return List.of("mixins.celeritas.json");
+        return Collections.singletonList("mixins.celeritas.json");
     }
 }

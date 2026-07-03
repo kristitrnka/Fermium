@@ -32,6 +32,8 @@ import net.fabricmc.loader.api.FabricLoader;
 //? if neoforge {
 /*import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
+//? if >=1.21.11
+/^import net.neoforged.neoforge.client.event.RegisterDebugEntriesEvent;^/
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.fml.ModList;
@@ -42,8 +44,12 @@ import net.neoforged.fml.loading.FMLLoader;
 
 import org.embeddedt.embeddium.api.EmbeddiumConstants;
 import org.embeddedt.embeddium.impl.gl.device.GLRenderDevice;
+import org.embeddedt.embeddium.impl.loader.common.EarlyLoaderServices;
+import org.embeddedt.embeddium.impl.render.CeleritasWorldRenderer;
 import org.embeddedt.embeddium.impl.render.ShaderModBridge;
 import org.embeddedt.embeddium.impl.util.MixinAuditUtil;
+import org.embeddedt.embeddium.impl.util.PlatformUtil;
+import org.embeddedt.embeddium.impl.util.ResourceLocationUtil;
 import org.embeddedt.embeddium.impl.util.sodium.FlawlessFrames;
 import org.embeddedt.embeddium.impl.commands.DevCommands;
 import org.embeddedt.embeddium.impl.gui.SodiumGameOptions;
@@ -56,6 +62,7 @@ import org.apache.logging.log4j.LogManager;
 *///?}
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 //? if forgelike
 @Mod(Celeritas.MODID)
@@ -78,7 +85,7 @@ public class Celeritas /*? if fabric {*/ /*implements ClientModInitializer *//*?
         //? if forge && >=1.18 && <1.20.2
         ModLoadingContext.get().registerExtensionPoint(IExtensionPoint.DisplayTest.class, () -> new IExtensionPoint.DisplayTest(() -> NetworkConstants.IGNORESERVERONLY, (a, b) -> true));
 
-        if (!FMLLoader.getDist().isClient()) {
+        if (!EarlyLoaderServices.INSTANCE.getDistribution().isClient()) {
             return;
         }
 
@@ -96,18 +103,36 @@ public class Celeritas /*? if fabric {*/ /*implements ClientModInitializer *//*?
         *///?}
 
         modEventBus.addListener(this::onClientSetup);
-        if(!FMLLoader.isProduction()) {
+        if(PlatformUtil.isDevelopmentEnvironment()) {
             //? if >=1.18
             mainEventBus.addListener((RegisterClientCommandsEvent event) -> DevCommands.register(event.getDispatcher()));
         }
 
+        //? if >=1.21.11 {
+        /*modEventBus.addListener((RegisterDebugEntriesEvent event) -> {
+            var rendererInfo = ResourceLocationUtil.make(MODID, "renderer_info");
+            event.register(rendererInfo, (displayer, level, clientChunk, serverChunk) -> {
+                ArrayList<String> strings = new ArrayList<>();
+                strings.add("%s%s Renderer (%s)".formatted(net.minecraft.ChatFormatting.AQUA, MODNAME, getVersion()));
+                var renderer = CeleritasWorldRenderer.instanceNullable();
+                if (renderer != null) {
+                    strings.addAll(renderer.getDebugStrings());
+                }
+                displayer.addToGroup(rendererInfo, strings);
+            });
+            event.includeInProfile(rendererInfo,
+                    net.minecraft.client.gui.components.debug.DebugScreenProfile.DEFAULT,
+                    net.minecraft.client.gui.components.debug.DebugScreenEntryStatus.IN_OVERLAY);
+        });
+        *///?}
+
         // TODO remove
         //? if shaders {
         modEventBus.addListener((RegisterKeyMappingsEvent ev) -> {
-            ev.register(net.irisshaders.iris.IrisModern.reloadKeybind);
-            ev.register(net.irisshaders.iris.IrisModern.shaderpackScreenKeybind);
-            ev.register(net.irisshaders.iris.IrisModern.toggleShadersKeybind);
-            ev.register(net.irisshaders.iris.IrisModern.wireframeKeybind);
+            ev.register(net.irisshaders.iris.Iris.reloadKeybind);
+            ev.register(net.irisshaders.iris.Iris.shaderpackScreenKeybind);
+            ev.register(net.irisshaders.iris.Iris.toggleShadersKeybind);
+            ev.register(net.irisshaders.iris.Iris.wireframeKeybind);
         });
         //?}
     }
@@ -132,7 +157,7 @@ public class Celeritas /*? if fabric {*/ /*implements ClientModInitializer *//*?
 
     private static void commonClientInit() {
         GLRenderDevice.VANILLA_STATE_RESETTER = () -> {
-            //? if >=1.17 && <1.21.5
+            //? if >=1.17 <1.21.11
             com.mojang.blaze3d.vertex.BufferUploader.reset();
             //? if <1.17
             /*com.mojang.blaze3d.vertex.VertexBuffer.unbind();*/
@@ -193,5 +218,12 @@ public class Celeritas /*? if fabric {*/ /*implements ClientModInitializer *//*?
 
     public static boolean canApplyTranslucencySorting() {
         return Celeritas.options().performance.useTranslucentFaceSorting && !ShaderModBridge.isNvidiumEnabled();
+    }
+
+    public static boolean areGraphicsFancy() {
+        //? if <1.21.11 {
+        return Minecraft.getInstance().options.graphicsMode/*? if >=1.19 {*/().get()/*?}*/ != net.minecraft.client.GraphicsStatus.FAST;
+        //?} else
+        /*return Minecraft.getInstance().options.cutoutLeaves().get();*/
     }
 }

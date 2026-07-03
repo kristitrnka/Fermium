@@ -1,6 +1,5 @@
 package org.taumc.celeritas.impl.render.terrain.compile.task;
 
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import it.unimi.dsi.fastutil.objects.Reference2ReferenceMap;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
@@ -11,8 +10,10 @@ import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.crash.CrashReport;
 import net.minecraft.crash.CrashReportCategory;
 import net.minecraft.init.Blocks;
+import net.minecraft.launchwrapper.Launch;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.BlockRenderLayer;
+import net.minecraft.util.EnumBlockRenderType;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ReportedException;
 import net.minecraft.util.math.BlockPos;
@@ -40,6 +41,7 @@ import org.taumc.celeritas.impl.world.cloned.ChunkRenderContext;
 import java.util.*;
 
 public class ChunkBuilderMeshingTask extends ChunkBuilderTask<ChunkBuildOutput> {
+    public static boolean USE_NEW_BLOCK_RENDERER = (Boolean)Launch.blackboard.get("fml.deobfuscatedEnvironment") || Boolean.getBoolean("celeritas.useVintageFastBlockRenderer");
     private static final ProxyClassGenerator<WorldSlice, CeleritasBlockAccess> WORLD_SLICE_LOCAL_GENERATOR = new ProxyClassGenerator<>(WorldSlice.class, "WorldSliceLocal", CeleritasBlockAccess.class);
     private final RenderSection render;
     private final int buildTime;
@@ -109,13 +111,17 @@ public class ChunkBuilderMeshingTask extends ChunkBuilderTask<ChunkBuildOutput> 
                             }
                         }
 
+                        buildContext.getBlockRenderer().resetSharedState();
+
                         for (BlockRenderLayer layer : VintageChunkBuildContext.LAYERS) {
                             if (block.canRenderInLayer(blockState, layer)) {
                                 ForgeHooksClient.setRenderLayer(layer);
-                                var buffer = buildContext.getBufferForLayer(layer);
-                                int startVertex = buffer.getVertexCount();
-                                dispatcher.renderBlock(blockState, blockPos, slice, buffer);
-                                buildContext.recordRenderedQuads(layer, startVertex, buffer.getVertexCount(), blockState, blockPos);
+                                if (blockState.getRenderType() == EnumBlockRenderType.MODEL && USE_NEW_BLOCK_RENDERER) {
+                                    buildContext.getBlockRenderer().renderBlock(blockState, blockPos, slice, layer);
+                                } else {
+                                    var buffer = buildContext.getBufferForLayer(layer);
+                                    dispatcher.renderBlock(blockState, blockPos, slice, buffer);
+                                }
                             }
                         }
 
@@ -135,8 +141,6 @@ public class ChunkBuilderMeshingTask extends ChunkBuilderTask<ChunkBuildOutput> 
         } catch (Throwable ex) {
             // Create a new crash report for other exceptions (e.g. thrown in getQuads)
             throw fillCrashInfo(CrashReport.makeCrashReport(ex, "Encountered exception while building chunk meshes"), slice, blockPos);
-        } finally {
-            ForgeHooksClient.setRenderLayer(null);
         }
 
         buildContext.convertVanillaDataToCeleritasData(buffers);

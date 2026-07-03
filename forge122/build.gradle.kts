@@ -1,121 +1,184 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import org.embeddedt.embeddium.gradle.build.conventions.LWJGLHelper
-import org.embeddedt.embeddium.gradle.unimined.ProductionJarHelper
-import xyz.wagyourtail.jvmdg.gradle.task.files.DowngradeFiles
+import com.gtnewhorizons.retrofuturagradle.mcp.ApplySourceAccessTransformersTask
+import com.gtnewhorizons.retrofuturagradle.modutils.ModUtils
+import org.embeddedt.embeddium.gradle.build.conventions.ShadowHelper
+import org.embeddedt.embeddium.gradle.mdg.remapper.ReobfuscateCodeAndMixinsTask
 
 plugins {
-    id("celeritas.platform-conventions")
-    id("celeritas-unimined-plugin")
-    id("xyz.wagyourtail.unimined") version "1.3.15-SNAPSHOT"
-    id("xyz.wagyourtail.jvmdowngrader") version "1.1.3"
+    id("com.gtnewhorizons.retrofuturagradle") version "1.4.8"
+    id("com.gradleup.shadow")
+    id("embeddium-mdg-remapper")
+    id("maven-publish")
 }
 
 group = "org.embeddedt"
 version = rootProject.version
 
-data class VersionData(val mcpVersion: String, val forgeVersion: String)
+java {
+    withSourcesJar()
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(8))
+    }
+}
 
-val versionDataMap = mapOf(
-        "1.12.2" to VersionData("39-1.12", "14.23.5.2860"),
-        "1.10.2" to VersionData("39-1.12", "12.18.3.2511")
-)
-
-val minecraftVersion = project.name
-
-val versionData = versionDataMap.getValue(project.name)
-
-base.archivesName = "pintonium-forge-${project.name}"
+base.archivesName = "celeritas-forge-mc12.2"
 
 val modCompileOnly by configurations.creating
 configurations.compileOnly.get().extendsFrom(modCompileOnly)
+val modRuntimeOnly by configurations.creating
+configurations.runtimeOnly.get().extendsFrom(modRuntimeOnly)
 
-if (stonecutter.eval(minecraftVersion, "<=1.10.2")) {
-    configurations {
-        all {
-            resolutionStrategy.force("it.unimi.dsi:fastutil:7.1.0")
-            resolutionStrategy.force("com.google.code.gson:gson:2.10.1")
+val celeritasLwjglVersion = "3.3.3"
+
+minecraft {
+    mcVersion.set("1.12.2")
+}
+
+repositories {
+    exclusiveContent {
+        forRepository { maven("https://maven.cleanroommc.com") }
+        filter {
+            includeGroup("zone.rong")
         }
     }
+    exclusiveContent {
+        forRepository {
+            maven {
+                url = uri("https://cursemaven.com")
+            }
+        }
+        filter {
+            includeGroup("curse.maven")
+        }
+    }
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = "Modrinth"
+                url = uri("https://api.modrinth.com/maven")
+            }
+        }
+        filter {
+            includeGroup("maven.modrinth")
+        }
+    }
+    exclusiveContent {
+        forRepository { maven("https://nexus.gtnewhorizons.com/repository/public/") }
+        filter {
+            includeGroupAndSubgroups("com.gtnewhorizons")
+            includeGroup("com.github.GTNewHorizons")
+        }
+    }
+    exclusiveContent {
+        forRepository { maven("https://maven.taumc.org/releases") }
+        filter {
+            includeGroupAndSubgroups("org.taumc")
+        }
+    }
+    mavenCentral()
 }
-unimined.minecraft {
-    combineWith(
-            project(":common"),
-            project(":common").sourceSets.getByName("main")
-    )
-    combineWith(
-            project(":common-shaders"),
-            project(":common-shaders").sourceSets.getByName("main")
-    )
 
-    version(project.name)
+val forgePatchDeps by configurations.creating {
+    isCanBeResolved = true
+    isCanBeConsumed = false
+}
 
-    mappings {
-        searge()
-        mcp("stable", versionData.mcpVersion)
-    }
-
-    minecraftForge {
-        loader(versionData.forgeVersion)
-        mixinConfig("mixins.celeritas.json")
-        accessTransformer(rootProject.file("forge122/src/main/resources/META-INF/celeritas_at.cfg"))
-    }
-
-    val downgradeClient = tasks.register<DowngradeFiles>("downgradeClient") {
-        inputCollection = sourceSet.output.classesDirs + sourceSet.runtimeClasspath
-        classpath = files()
-    }
-
-    runs.config("client") {
-        javaVersion = JavaVersion.VERSION_1_8
-        classpath = downgradeClient.get().outputCollection + files(jvmdg.getDowngradedApi(JavaVersion.VERSION_1_8))
-        systemProperty("fml.coreMods.load", "zone.rong.mixinbooter.MixinBooterPlugin,me.eigenraven.lwjgl3ify.core.Lwjgl3ifyCoremod,org.taumc.celeritas.core.CeleritasLoadingPlugin")
-    }
-
-    runs.config("server") {
-        enabled = false
-    }
-
-    mods {
-        remap(modCompileOnly) {
-            // no additional configuration
+configurations {
+    named("shadow") {
+        attributes {
+            attribute(ModUtils.DEOBFUSCATOR_TRANSFORMED, true)
         }
     }
 }
 
 dependencies {
+    val lombokVersion = rootProject.properties["lombok_version"].toString()
+    compileOnly("org.projectlombok:lombok:${lombokVersion}")
+    annotationProcessor("org.projectlombok:lombok:${lombokVersion}")
+
+    val jabelVersion = rootProject.properties["jabel_version"].toString()
+
+    annotationProcessor("com.github.GTNewHorizons:jabel-javac-plugin:${jabelVersion}")
+    compileOnly("com.github.GTNewHorizons:jabel-javac-plugin:${jabelVersion}")
+
+    implementation(project(":common", configuration = "downgraded")) {
+        isTransitive = false
+    }
+    shadow(project(":common", configuration = "downgraded")) {
+        isTransitive = false
+    }
     "shadow"("org.joml:joml:1.10.5")
-    "shadow"("org.taumc:glsl-transformation-lib:${rootProject.properties["glsl_transformation_lib_version"]}:fat")
-    "shadow"("org.anarres:jcpp:1.4.14")
     implementation("org.joml:joml:1.10.5")
     implementation("zone.rong:mixinbooter:10.5")
-    compileOnly("com.gtnewhorizons.retrofuturabootstrap:RetroFuturaBootstrap:1.0.7") {
+    compileOnly("com.gtnewhorizons.retrofuturabootstrap:RetroFuturaBootstrap:1.0.11") {
         exclude(group = "org.apache.logging.log4j")
     }
+    "modRuntimeOnly"("curse.maven:ae2-223794:2747063")
     modCompileOnly("maven.modrinth:fluidlogged-api:3.0.6")
 }
 
-sourceSets {
-    main {
-        java {
-            srcDirs("src/shaders/java")
-        }
-        resources {
-            srcDirs("src/shaders/resources")
-        }
+tasks.named<JavaCompile>("compileJava") {
+    sourceCompatibility = "21"
+    options.release = 8
+
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(21)
     }
 }
 
-tasks.named("preRunClient") {
-    dependsOn("downgradeClient")
+tasks.named("reobfJar").configure {
+    enabled = false
 }
 
-LWJGLHelper.convertLwjgl2To3(project)
+tasks.register<ReobfuscateCodeAndMixinsTask>("celeritasRemapJar") {
+    tsrgMappings = mcpTasks.srgFile("mcp-srg.srg")
+    deobfMinecraftJar = mcpTasks.taskPackagePatchedMc.flatMap { it.archiveFile }
+    classpath = sourceSets.main.get().compileClasspath
+    archiveBaseName.set(base.archivesName)
+    archiveClassifier.set("reobf")
+    input = tasks.named<Jar>("jar").flatMap { it.archiveFile }
+    dependsOn(mcpTasks.taskGenerateForgeSrgMappings)
+}
 
-ProductionJarHelper.configureProcessedResources(project)
-ProductionJarHelper.setupLegacyFMLManifest(project)
-ProductionJarHelper.createShadowRemapJar(project)
+ShadowHelper.createShadowRemapJar(project, "celeritasRemapJar")
+
+tasks.named<ApplySourceAccessTransformersTask>("applySourceAccessTransformers") {
+    accessTransformerFiles.from("src/main/resources/META-INF/celeritas_at.cfg")
+}
+
+tasks.named<Jar>("jar") {
+    manifest {
+        attributes["FMLAT"] = "celeritas_at.cfg"
+        attributes["FMLCorePlugin"] = "org.taumc.celeritas.core.CeleritasLoadingPlugin"
+        attributes["FMLCorePluginContainsFMLMod"] = "true"
+        attributes["ForceLoadAsMod"] = "true"
+    }
+}
 
 tasks.register("packageJar", Copy::class) {
     from(tasks.named<ShadowJar>("shadowRemapJar").get().archiveFile)
     into("${rootProject.layout.buildDirectory.get()}/libs/${project.version}")
+    dependsOn(tasks.named("shadowRemapJar"))
+}
+
+tasks.processResources.configure {
+    inputs.property("version", version)
+
+    filesMatching("mcmod.info") {
+        expand(mapOf("version" to inputs.properties["version"]))
+    }
+
+    from(rootProject.file("modern/src/main/resources/icon.png"))
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("default") {
+            artifactId = base.archivesName.get()
+            artifact(tasks.named<ShadowJar>("shadowRemapJar").map { it.archiveFile })
+            artifact(tasks.named("sourcesJar")) {
+                classifier = "sources"
+            }
+        }
+    }
 }

@@ -1,0 +1,13 @@
+                   
+                                                              
+                             
+                              
+                                                                        
+                          
+                         
+                                       
+
+plugins {
+    id("com.gradleup.shadow")
+    id("java-library")
+}

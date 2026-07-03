@@ -1,12 +1,11 @@
 package org.embeddedt.embeddium.impl.modern.render.chunk.compile.tasks;
 
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.Reference2ReferenceMap;
-import net.irisshaders.iris.shaderpack.materialmap.WorldRenderingSettings;
+//? if >=26.1 {
+/*import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
+*///?} else
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
-//? if >=1.21.5 {
-/*import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.client.renderer.block.model.BlockModelPart;
-*///?}
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.world.level.block.AirBlock;
 import org.embeddedt.embeddium.api.render.chunk.SectionInfoBuilder;
@@ -43,7 +42,7 @@ import net.minecraft.world.level.material.FluidState;
 import net.minecraftforge.client.model.data.ModelData;
 //? if forge && <1.19
 /*import net.minecraftforge.client.ForgeHooksClient;*/
-//? if neoforge && <1.21.5
+//? if neoforge
 /*import net.neoforged.neoforge.client.model.data.ModelData;*/
 import org.embeddedt.embeddium.api.ChunkDataBuiltEvent;
 import org.embeddedt.embeddium.impl.chunk.MeshAppenderRenderer;
@@ -107,10 +106,13 @@ public class ChunkBuilderMeshingTask extends ChunkBuilderTask<ChunkBuildOutput> 
         //? if forgelike
         ModelDataSnapshotter.Getter modelDataGetter = slice.getModelDataGetter(this.render.getChunkX(), this.render.getChunkY(), this.render.getChunkZ());
 
-        boolean voxelizingLight = WorldRenderingSettings.INSTANCE.shouldVoxelizeLightBlocks();
+        //? if shaders {
+        boolean voxelizingLight = net.irisshaders.iris.shaderpack.materialmap.WorldRenderingSettings.INSTANCE.shouldVoxelizeLightBlocks();
+        //?}
 
-        //? if >=1.21.5
-        /*ObjectArrayList<BlockModelPart> renderedParts = new ObjectArrayList<>(10);*/
+        //? if >=1.21.11 {
+        /*ObjectArrayList<BlockStateModelPart> partsList = new ObjectArrayList<>();
+        *///?}
 
         try {
             for (int y = minY; y < maxY; y++) {
@@ -130,7 +132,7 @@ public class ChunkBuilderMeshingTask extends ChunkBuilderTask<ChunkBuildOutput> 
                         blockPos.set(x, y, z);
                         modelOffset.set(x & 15, y & 15, z & 15);
 
-                        //? if >=1.17 {
+                        //? if shaders && >=1.17 {
                         if (voxelizingLight && blockState.getBlock() instanceof net.minecraft.world.level.block.LightBlock) {
                             cache.getSpecialBlockRenderer().voxelizeLightBlock(blockPos, blockState, buffers);
                         }
@@ -140,30 +142,19 @@ public class ChunkBuilderMeshingTask extends ChunkBuilderTask<ChunkBuildOutput> 
                             long seed = blockState.getSeed(blockPos);
                             context.update(GeometryCategory.BLOCK, blockPos, modelOffset, blockState, seed);
 
-                            var vanillaModel = cache.getBlockModels().getBlockModel(blockState);
-                            //? if <1.21.5 {
-                            var model = vanillaModel;
-                            context.model(model);
-                            //?}
 
-                            //? if forgelike && <1.21.5 {
+                            //? if <1.21.11 {
+                            var model = cache.getBlockModels().getBlockModel(blockState);
+                            context.model(model);
+
+                            //? if forgelike {
                             var modelData = model.getModelData(context.localSlice(), blockPos, blockState, modelDataGetter.getModelData(blockPos));
                             context.setModelData(modelData);
 
                             context.random().setSeed(seed); // for render layers
                             //?}
 
-
-                            //? if >=1.21.5 {
-                            /*vanillaModel.collectParts(context.localSlice(), blockPos, blockState, context.random(), renderedParts);
-                            //noinspection ForLoopReplaceableByForEach
-                            for (int i = 0; i < renderedParts.size(); i++) {
-                                context.model(renderedParts.get(i));
-                                context.renderLayer(context.model().getRenderType(blockState));
-                                cache.getBlockRenderer().renderModel(context, buffers);
-                            }
-                            renderedParts.clear();
-                            *///?} else if forgelike && >=1.19 {
+                            //? if forgelike && >=1.19 {
                             // We optimize the asList() call to return a cached ImmutableList, so this will not allocate.
                             var renderTypeList = model.getRenderTypes(blockState, context.random(), modelData).asList();
                             //noinspection ForLoopReplaceableByForEach
@@ -189,6 +180,19 @@ public class ChunkBuilderMeshingTask extends ChunkBuilderTask<ChunkBuildOutput> 
                             cache.getBlockRenderer()
                                     .renderModel(context, buffers);
                             *///?}
+
+                            //?} else {
+                            /*var model = cache.getBlockModels().get(blockState);
+                            context.random().setSeed(seed);
+                            model.collectParts(context.localSlice(), blockPos, blockState, context.random(), partsList);
+                            //noinspection ForLoopReplaceableByForEach
+                            for (int i = 0; i < partsList.size(); i++) {
+                                context.model(partsList.get(i));
+                                cache.getBlockRenderer().renderModel(context, buffers);
+                            }
+                            partsList.clear();
+                            *///?}
+
                         }
 
                         FluidState fluidState = blockState.getFluidState();
@@ -196,6 +200,7 @@ public class ChunkBuilderMeshingTask extends ChunkBuilderTask<ChunkBuildOutput> 
                         if (!fluidState.isEmpty()) {
                             context.model(null);
                             context.update(GeometryCategory.FLUID, blockPos, modelOffset, blockState, 42L);
+                            //? if <26.1
                             context.renderLayer(ItemBlockRenderTypes.getRenderLayer(fluidState));
                             cache.getFluidRenderer().render(context, buffers);
                         }
@@ -205,17 +210,19 @@ public class ChunkBuilderMeshingTask extends ChunkBuilderTask<ChunkBuildOutput> 
 
                             if (entity != null) {
                                 //? if >=1.17 {
-                                BlockEntityRenderer<BlockEntity> renderer = Minecraft.getInstance().getBlockEntityRenderDispatcher().getRenderer(entity);
+                                BlockEntityRenderer<BlockEntity/*? if >=1.21.11 {*/ /*, net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState *//*?}*/> renderer = Minecraft.getInstance().getBlockEntityRenderDispatcher().getRenderer(entity);
                                 //?} else
                                 /*BlockEntityRenderer<BlockEntity> renderer = net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher.instance.getRenderer(entity);*/
 
                                 if (renderer != null) {
-                                    (renderer.shouldRenderOffScreen(/*? if <1.21.5 {*/entity/*?}*/) ? renderData.globalBlockEntities : renderData.culledBlockEntities).add(entity);
+                                    (renderer.shouldRenderOffScreen(/*? if <1.21.11 {*/ entity /*?}*/)
+                                            ? renderData.globalBlockEntities
+                                            : renderData.culledBlockEntities).add(entity);
                                 }
                             }
                         }
 
-                        if (blockState.isSolidRender(/*? if <1.21.2 {*/slice, blockPos/*?}*/)) {
+                        if (blockState.isSolidRender(/*? if <1.21.11 {*/ slice, blockPos /*?}*/)) {
                             occluder.setOpaque(blockPos);
                         }
                     }

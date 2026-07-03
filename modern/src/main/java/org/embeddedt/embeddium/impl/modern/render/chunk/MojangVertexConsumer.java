@@ -5,13 +5,13 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import org.embeddedt.embeddium.api.render.texture.SpriteUtil;
+import org.embeddedt.embeddium.api.util.ColorARGB;
 import org.embeddedt.embeddium.api.util.NormI8;
 import org.embeddedt.embeddium.impl.render.chunk.compile.buffers.ChunkModelBuilder;
 import org.embeddedt.embeddium.impl.modern.render.chunk.compile.pipeline.BlockRenderContext;
 import org.embeddedt.embeddium.impl.render.chunk.data.MinecraftBuiltRenderSectionData;
 import org.embeddedt.embeddium.impl.render.chunk.terrain.material.Material;
 import org.embeddedt.embeddium.impl.render.chunk.vertex.format.ChunkVertexEncoder;
-import org.embeddedt.embeddium.impl.render.texture.TextureAtlasExtended;
 import org.embeddedt.embeddium.impl.util.ModelQuadUtil;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
@@ -77,6 +77,7 @@ public class MojangVertexConsumer implements VertexConsumer, AutoCloseable {
     }
 
     private void triggerSpriteAnimation() {
+        //? if <1.21.11 {
         float uTotal = 0, vTotal = 0;
         var vertices = this.vertices;
         for(int i = 0; i < 4; i++) {
@@ -84,11 +85,12 @@ public class MojangVertexConsumer implements VertexConsumer, AutoCloseable {
             uTotal += vertex.u;
             vTotal += vertex.v;
         }
-        var sprite = ((TextureAtlasExtended)this.blocksAtlas).celeritas$findFromUV(uTotal / 4, vTotal / 4);
+        var sprite = ((org.embeddedt.embeddium.impl.render.texture.TextureAtlasExtended)this.blocksAtlas).celeritas$findFromUV(uTotal / 4, vTotal / 4);
         if (SpriteUtil.hasAnimation(sprite) && this.targetBuilder.getSectionContextBundle() instanceof MinecraftBuiltRenderSectionData<?,?> mcData) {
             //noinspection unchecked
             ((Collection<TextureAtlasSprite>)mcData.animatedSprites).add(sprite);
         }
+        //?}
     }
 
     private int flushLastVertex() {
@@ -140,6 +142,17 @@ public class MojangVertexConsumer implements VertexConsumer, AutoCloseable {
         return this;
     }
 
+    //? if >=1.18 {
+    @Override
+    //? if <1.21
+    public VertexConsumer color(int color) {
+    //? if >=1.21
+    /*public VertexConsumer setColor(int color) {*/
+        currentVertexObj.color = ColorARGB.toABGR(color);
+        return this;
+    }
+    //?}
+
     @Override
     //? if <1.21
     public VertexConsumer uv(float u, float v) {
@@ -176,6 +189,14 @@ public class MojangVertexConsumer implements VertexConsumer, AutoCloseable {
         currentVertexObj.vanillaNormal = NormI8.pack(p_350429_, p_350286_, p_350836_);
         return this;
     }
+
+    //? if >=1.21.11 {
+    /*@Override
+    public VertexConsumer setLineWidth(float lineWidth) {
+        return this;
+    }
+    *///?}
+
 
     //? if >=1.17 <1.21 {
 

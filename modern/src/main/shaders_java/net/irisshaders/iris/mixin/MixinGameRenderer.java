@@ -20,17 +20,15 @@ import net.minecraft.client.renderer.ItemInHandRenderer;
 import net.minecraft.client.renderer.MultiBufferSource.BufferSource;
 import net.minecraft.client.renderer.RenderBuffers;
 import net.minecraft.server.packs.resources.ResourceManager;
-import org.embeddedt.embeddium.compat.mc.MCShaderInstance;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.taumc.celeritas.shaders.CeleritasShaders;
 
 import java.util.ArrayList;
-
-import static net.irisshaders.iris.IrisLogging.IRIS_LOGGER;
 
 @Mixin(GameRenderer.class)
 public class MixinGameRenderer {
@@ -57,10 +55,10 @@ public class MixinGameRenderer {
 
 	@Inject(method = "<init>", at = @At("TAIL"))
 	private void iris$logSystem(Minecraft arg, ItemInHandRenderer arg2, ResourceManager arg3, RenderBuffers arg4, CallbackInfo ci) {
-		IRIS_LOGGER.info("Hardware information:");
-		IRIS_LOGGER.info("CPU: " + GlUtil.getCpuInfo());
-		IRIS_LOGGER.info("GPU: " + GlUtil.getRenderer() + " (Supports OpenGL " + GlUtil.getOpenGLVersion() + ")");
-		IRIS_LOGGER.info("OS: " + System.getProperty("os.name") + " (" + System.getProperty("os.version") + ")");
+		CeleritasShaders.logger().info("Hardware information:");
+		CeleritasShaders.logger().info("CPU: " + GlUtil.getCpuInfo());
+		CeleritasShaders.logger().info("GPU: " + GlUtil.getRenderer() + " (Supports OpenGL " + GlUtil.getOpenGLVersion() + ")");
+		CeleritasShaders.logger().info("OS: " + System.getProperty("os.name") + " (" + System.getProperty("os.version") + ")");
 	}
 
 	@WrapWithCondition(method = "renderItemInHand", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/ItemInHandRenderer;renderHandsWithItems(FLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;Lnet/minecraft/client/player/LocalPlayer;I)V"))
@@ -73,7 +71,6 @@ public class MixinGameRenderer {
 		Iris.getPipelineManager().getPipeline().ifPresent(WorldRenderingPipeline::finalizeGameRendering);
 	}
 
-    //? if <1.21.2 {
 	@Redirect(method = "reloadShaders", at = @At(value = "INVOKE", target = "Lcom/google/common/collect/Lists;newArrayList()Ljava/util/ArrayList;"))
 	private ArrayList<Program> iris$reloadGeometryShaders() {
 		ArrayList<Program> programs = Lists.newArrayList();
@@ -82,5 +79,4 @@ public class MixinGameRenderer {
 		programs.addAll(IrisProgramTypes.TESS_EVAL.getPrograms().values());
 		return programs;
 	}
-    //?}
 }

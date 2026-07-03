@@ -20,17 +20,15 @@ import java.util.*;
 import java.util.stream.Stream;
 
 public class CeleritasArchaicMixinPlugin implements IMixinConfigPlugin {
-    public static final Logger LOGGER = LogManager.getLogger("PintoniumMixins");
+    public static final Logger LOGGER = LogManager.getLogger("CeleritasMixins");
 
     @Override
     public void onLoad(String mixinPackage) {
-        LOGGER.info("Loaded Pintonium mixin plugin");
+        LOGGER.info("Loaded Celeritas mixin plugin");
         // Hack for now
         var handle = SharedConfig.getRfbTransformers().stream().filter(transformer -> transformer.id().equals("lwjgl3ify:redirect")).findFirst().orElseThrow();
         handle.exclusions().add("org.embeddedt.embeddium");
         handle.exclusions().add("org.taumc.celeritas");
-        handle.exclusions().add("net.irisshaders.iris");
-        handle.exclusions().add("com.mitchej123.glsm");
     }
 
     @Override
@@ -93,7 +91,7 @@ public class CeleritasArchaicMixinPlugin implements IMixinConfigPlugin {
                 LOGGER.error("Error reading path", e);
             }
         }
-        LOGGER.info("Found {} mixin classes", possibleMixinClasses);
+        LOGGER.info("Found {} mixin classes", possibleMixinClasses.size());
         for (var fs : fileSystemsToClose) {
             try {
                 fs.close();

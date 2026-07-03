@@ -23,26 +23,20 @@ import org.apache.logging.log4j.Logger;
 import org.embeddedt.embeddium.impl.common.util.MathUtil;
 import org.embeddedt.embeddium.impl.common.util.NativeBuffer;
 import org.embeddedt.embeddium.impl.gl.device.GLRenderDevice;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL30;
+import org.embeddedt.embeddium.impl.gui.SodiumGameOptions;
 import org.taumc.celeritas.impl.command.TogglePassCommand;
-import org.taumc.celeritas.impl.gui.SodiumGameOptions;
 import org.taumc.celeritas.impl.render.terrain.CeleritasWorldRenderer;
 
-@Mod(modid = CeleritasVintage.MODID, useMetadata = true)
+@Mod(modid = CeleritasVintage.MODID, useMetadata = true, clientSideOnly = true, acceptableRemoteVersions = "*")
 public class CeleritasVintage {
     public static final String MODID = "celeritas";
-    private static final Logger LOGGER = LogManager.getLogger("Pintonium");
+    private static final Logger LOGGER = LogManager.getLogger("Celeritas");
     public static String VERSION;
     private static final SodiumGameOptions CONFIG = loadConfig();
 
     @EventHandler
     public void onConstruct(FMLConstructionEvent event) {
-        GLRenderDevice.VANILLA_STATE_RESETTER = () -> {
-            GL30.glBindVertexArray(0);
-            OpenGlHelper.glBindBuffer(OpenGlHelper.GL_ARRAY_BUFFER, 0);
-            GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
-        };
+        GLRenderDevice.VANILLA_STATE_RESETTER = () -> OpenGlHelper.glBindBuffer(OpenGlHelper.GL_ARRAY_BUFFER, 0);
         VERSION = Loader.instance().getIndexedModList().get(MODID).getVersion();
         MinecraftForge.EVENT_BUS.register(this);
     }
@@ -63,7 +57,7 @@ public class CeleritasVintage {
 
         var strings = event.getRight();
         strings.add("");
-        strings.add("%s%s Renderer (%s)".formatted(ChatFormatting.GREEN, "Pintonium", VERSION));
+        strings.add(String.format("%s%s Renderer (%s)", ChatFormatting.AQUA, "Celeritas", VERSION));
 
         // Embeddium: Show a lot less with reduced debug info
         if (Minecraft.getMinecraft().isReducedDebug()) {
